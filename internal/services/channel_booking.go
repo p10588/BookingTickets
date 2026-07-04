@@ -1,3 +1,21 @@
+// CONCURRENCY PATTERN 2: BUFFERED CHANNEL PIPELINE (CSP MODEL WITHOUT FAST-FAIL)
+//
+// [Analogy]: The ticket hall sets up velvet ropes (Channel Queue) — no more pushing, just an
+// orderly line. But there is only one ticket counter (a single Event Loop goroutine), and the
+// queue stretches 2 million users long, so each person waits 6 seconds just to reach the
+// counter, only to hear "sold out in the first millisecond." Worse, once the queue itself is
+// full, newcomers freeze at the entrance and cannot even join — they block the doorway until
+// a slot opens up.
+//
+// [Technical]: A single event loop goroutine serializes all requests through the channel,
+// eliminating shared-memory race conditions entirely. However, without a fast-fail check
+// before enqueue, rejected requests must traverse the full pipeline before being turned away,
+// causing backpressure latency. A full buffer also blocks the caller's goroutine at the send.
+//
+// [Trade-off]: Race conditions are eliminated, but throughput is limited to a single worker
+// and latency grows linearly with queue depth — every request pays the full pipeline cost
+// even when tickets are already sold out.
+
 package services
 
 import (
